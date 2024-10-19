@@ -1,85 +1,33 @@
 #include "rational.h"
 
-Rational::Rational() : numerator(0), denominator(1) {
-}
-
-Rational::Rational(int num) : numerator(num), denominator(1) {
-} 
-
-Rational::Rational(int num, int denom) : numerator(num), denominator(denom) {
-  if (denom == 0) {
-    throw RationalDivisionByZero();
-  }
-  Reduce();
-}
-
-int Rational::GetNumerator() const {
-  return numerator;
-}
-
-int Rational::GetDenominator() const {
-  return denominator;
-}
-
-void Rational::SetNumerator(int num) {
-  numerator = num;
-  Reduce();
-}
-
-void Rational::SetDenominator(int denom) {
-  if (denom == 0) {
-    throw RationalDivisionByZero();
-  }
-  denominator = denom;
-  Reduce();
-}
-
-void Rational::Reduce() {
-  int gcd = std::gcd(numerator, denominator);
-  numerator /= gcd;
-  denominator /= gcd;
-  if (denominator < 0) {
-    numerator = -numerator;
-    denominator = -denominator;
-  }
-}
-
-Rational Rational::operator+(const Rational& other) const {
-  return Rational(numerator * other.denominator + other.numerator * denominator, denominator * other.denominator);
-}
-
-Rational Rational::operator-(const Rational& other) const {
-  return Rational(numerator * other.denominator - other.numerator * denominator, denominator * other.denominator);
-}
-
-Rational Rational::operator*(const Rational& other) const {
-  return Rational(numerator * other.numerator, denominator * other.denominator);
-}
-
-Rational Rational::operator/(const Rational& other) const {
-  if (other.numerator == 0) {
-    throw RationalDivisionByZero();
-  }
-  return Rational(numerator * other.denominator, denominator * other.numerator);
-}
-
-Rational& Rational::operator+=(const Rational& other) {
-  *this = *this + other;
+Rational& Rational::operator+=(const Rational& rhs) {
+  numerator_ = numerator_ * rhs.denominator_ + rhs.numerator_ * denominator_;
+  denominator_ *= rhs.denominator_;
+  Normalize();
   return *this;
 }
 
-Rational& Rational::operator-=(const Rational& other) {
-  *this = *this - other;
+Rational& Rational::operator-=(const Rational& rhs) {
+  numerator_ = numerator_ * rhs.denominator_ - rhs.numerator_ * denominator_;
+  denominator_ *= rhs.denominator_;
+  Normalize();
   return *this;
 }
 
-Rational& Rational::operator*=(const Rational& other) {
-  *this = *this * other;
+Rational& Rational::operator*=(const Rational& rhs) {
+  numerator_ *= rhs.numerator_;
+  denominator_ *= rhs.denominator_;
+  Normalize();
   return *this;
 }
 
-Rational& Rational::operator/=(const Rational& other) {
-  *this = *this / other;
+Rational& Rational::operator/=(const Rational& rhs) {
+  if (rhs.numerator_ == 0) {
+    throw RationalDivisionByZero();
+  }
+  numerator_ *= rhs.denominator_;
+  denominator_ *= rhs.numerator_;
+  Normalize();
   return *this;
 }
 
@@ -88,71 +36,72 @@ Rational Rational::operator+() const {
 }
 
 Rational Rational::operator-() const {
-  return Rational(-numerator, denominator);
+  return {-numerator_, denominator_};  // Использование списка инициализаторов
 }
 
 Rational& Rational::operator++() {
-  numerator += denominator;
+  *this += 1;
   return *this;
 }
 
 Rational Rational::operator++(int) {
   Rational temp = *this;
-  ++(*this);
+  *this += 1;
   return temp;
 }
 
 Rational& Rational::operator--() {
-  numerator -= denominator;
+  *this -= 1;
   return *this;
 }
 
 Rational Rational::operator--(int) {
   Rational temp = *this;
-  --(*this);
+  *this -= 1;
   return temp;
 }
 
-bool Rational::operator==(const Rational& other) const {
-  return numerator == other.numerator && denominator == other.denominator;
+bool Rational::operator==(const Rational& rhs) const {
+  return numerator_ == rhs.numerator_ && denominator_ == rhs.denominator_;
 }
 
-bool Rational::operator!=(const Rational& other) const {
-  return !(*this == other);
+bool Rational::operator!=(const Rational& rhs) const {
+  return !(*this == rhs);
 }
 
-bool Rational::operator<(const Rational& other) const {
-  return numerator * other.denominator < other.numerator * denominator;
+bool Rational::operator<(const Rational& rhs) const {
+  return numerator_ * rhs.denominator_ < rhs.numerator_ * denominator_;
 }
 
-bool Rational::operator<=(const Rational& other) const {
-  return *this < other || *this == other;
+bool Rational::operator<=(const Rational& rhs) const {
+  return *this < rhs || *this == rhs;
 }
 
-bool Rational::operator>(const Rational& other) const {
-  return !(*this <= other);
+bool Rational::operator>(const Rational& rhs) const {
+  return !(*this <= rhs);
 }
 
-bool Rational::operator>=(const Rational& other) const {
-  return !(*this < other);
+bool Rational::operator>=(const Rational& rhs) const {
+  return !(*this < rhs);
 }
 
-std::ostream& operator<<(std::ostream& out, const Rational& r) {
-  if (r.denominator == 1) {
-    out << r.numerator;
+std::ostream& operator<<(std::ostream& os, const Rational& r) {
+  if (r.denominator_ == 1) {
+    os << r.numerator_;
   } else {
-    out << r.numerator << '/' << r.denominator;
+    os << r.numerator_ << '/' << r.denominator_;
   }
-  return out;
+  return os;
 }
 
-std::istream& operator>>(std::istream& in, Rational& r) {
-  int num, denom;
-  char slash;
-  in >> num >> slash >> denom;
-  if (denom == 0) {
-    throw RationalDivisionByZero();
+std::istream& operator>>(std::istream& is, Rational& r) {
+  int num = 0, denom = 1;
+  char delim = '/';
+  is >> num >> delim >> denom;
+  if (is && delim == '/') {
+    r = Rational(num, denom);
+  } else {
+    is.setstate(std::ios::failbit);
   }
-  r = Rational(num, denom);
-  return in;
+  return is;
 }

@@ -1,6 +1,4 @@
-#ifndef RATIONAL_H
-#define RATIONAL_H
-
+#pragma once
 #include <iostream>
 #include <stdexcept>
 #include <numeric>
@@ -12,31 +10,45 @@ class RationalDivisionByZero : public std::runtime_error {
 };
 
 class Rational {
- private:
-  int numerator;
-  int denominator;
-
-  void Reduce();
-
  public:
-  Rational();
-  Rational(int num);  // NOLINT
-  Rational(int num, int denom);
+  Rational() : numerator_(0), denominator_(1) {
+  }
 
-  int GetNumerator() const;
-  int GetDenominator() const;
-  void SetNumerator(int num);
-  void SetDenominator(int denom);
+  explicit Rational(int num) : numerator_(num), denominator_(1) {
+  }  // NOLINT
 
-  Rational operator+(const Rational& other) const;
-  Rational operator-(const Rational& other) const;
-  Rational operator*(const Rational& other) const;
-  Rational operator/(const Rational& other) const;
+  Rational(int num, int denom) {
+    if (denom == 0) {
+      throw RationalDivisionByZero();
+    }
+    SetNumerator(num);
+    SetDenominator(denom);
+    Normalize();
+  }
 
-  Rational& operator+=(const Rational& other);
-  Rational& operator-=(const Rational& other);
-  Rational& operator*=(const Rational& other);
-  Rational& operator/=(const Rational& other);
+  int GetNumerator() const {
+    return numerator_;
+  }
+  int GetDenominator() const {
+    return denominator_;
+  }
+
+  void SetNumerator(int num) {
+    numerator_ = num;
+    Normalize();
+  }
+  void SetDenominator(int denom) {
+    if (denom == 0) {
+      throw RationalDivisionByZero();
+    }
+    denominator_ = denom;
+    Normalize();
+  }
+
+  Rational& operator+=(const Rational& rhs);
+  Rational& operator-=(const Rational& rhs);
+  Rational& operator*=(const Rational& rhs);
+  Rational& operator/=(const Rational& rhs);
 
   Rational operator+() const;
   Rational operator-() const;
@@ -46,15 +58,28 @@ class Rational {
   Rational& operator--();
   Rational operator--(int);
 
-  bool operator==(const Rational& other) const;
-  bool operator!=(const Rational& other) const;
-  bool operator<(const Rational& other) const;
-  bool operator<=(const Rational& other) const;
-  bool operator>(const Rational& other) const;
-  bool operator>=(const Rational& other) const;
+  bool operator==(const Rational& rhs) const;
+  bool operator!=(const Rational& rhs) const;
+  bool operator<(const Rational& rhs) const;
+  bool operator<=(const Rational& rhs) const;
+  bool operator>(const Rational& rhs) const;
+  bool operator>=(const Rational& rhs) const;
 
-  friend std::ostream& operator<<(std::ostream& out, const Rational& r);
-  friend std::istream& operator>>(std::istream& in, Rational& r);
+  friend std::ostream& operator<<(std::ostream& os, const Rational& r);
+  friend std::istream& operator>>(std::istream& is, Rational& r);
+
+ private:
+  int numerator_;
+  int denominator_;
+
+  void Normalize() {
+    int gcd_value = std::gcd(numerator_, denominator_);
+    numerator_ /= gcd_value;
+    denominator_ /= gcd_value;
+
+    if (denominator_ < 0) {
+      numerator_ = -numerator_;
+      denominator_ = -denominator_;
+    }
+  }
 };
-
-#endif
