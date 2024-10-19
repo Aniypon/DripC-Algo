@@ -1,67 +1,60 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
+#include <cstdint>
 #include <stdexcept>
-#include <cstddef>
 
 class ArrayOutOfRange : public std::out_of_range {
  public:
-  ArrayOutOfRange() : std::out_of_range("Array index out of range") {
+  ArrayOutOfRange() : std::out_of_range("ArrayOutOfRange") {
   }
 };
 
-template <typename T, std::size_t N>
+template <class T, size_t N>
 class Array {
  public:
   T data[N];
 
-  T& operator[](std::size_t idx) {
-    return data[idx];
+  const T &operator[](size_t index) const {
+    return data[index];
   }
 
-  const T& operator[](std::size_t idx) const {
-    return data[idx];
+  T &operator[](size_t index) {
+    return data[index];
   }
 
-  T& At(std::size_t idx) {
-    if (idx >= N) {
-      throw ArrayOutOfRange();
+  T &At(size_t index) {
+    if (index < N) {
+      return data[index];
     }
-    return data[idx];
+    throw ArrayOutOfRange{};
   }
 
-  const T& At(std::size_t idx) const {
-    if (idx >= N) {
-      throw ArrayOutOfRange();
-    }
-    return data[idx];
-  }
-
-  T& Front() {
+  T &Front() {
     return data[0];
   }
 
-  const T& Front() const {
+  const T &Front() const {
     return data[0];
   }
 
-  T& Back() {
+  T &Back() {
     return data[N - 1];
   }
 
-  const T& Back() const {
+  const T &Back() const {
     return data[N - 1];
   }
 
-  T* Data() {
+  T *Data() {
     return data;
   }
 
-  const T* Data() const {
+  const T *Data() const {
     return data;
   }
 
-  std::size_t Size() const {
+  size_t Size() const {
     return N;
   }
 
@@ -69,16 +62,14 @@ class Array {
     return N == 0;
   }
 
-  void Fill(const T& value) {
-    for (std::size_t i = 0; i < N; ++i) {
+  void Fill(const T &value) {
+    for (size_t i = 0; i < N; i++) {
       data[i] = value;
     }
   }
 
-  void Swap(Array<T, N>& other) {
-    for (std::size_t i = 0; i < N; ++i) {
-      std::swap(data[i], other.data[i]);
-    }
+  void Swap(Array<T, N> &other) {
+    std::swap(data, other.data);
   }
 };
 
