@@ -6,8 +6,7 @@
 
 class MatrixOutOfRange : public std::out_of_range {
  public:
-  MatrixOutOfRange() : std::out_of_range("Matrix index out of range") {
-  }
+  MatrixOutOfRange() : std::out_of_range("Matrix index out of range") {}
 };
 
 template <typename T, size_t Rows, size_t Cols>
@@ -145,37 +144,29 @@ class Matrix {
     return !(*this == other);
   }
 
-  friend std::ostream& operator<<(std::ostream& os, const Matrix<T, Rows, Cols>& matrix) {
+  friend std::ostream& operator<<(std::ostream& out, const Matrix<T, Rows, Cols>& matrix) {
     for (size_t i = 0; i < Rows; ++i) {
       for (size_t j = 0; j < Cols; ++j) {
-        os << matrix.data[i][j] << ' ';
+        if (j > 0) {
+          out << ' ';
+        }
+        out << matrix.data[i][j];
       }
-      os << '\n';
+      if (i < Rows - 1) {
+        out << '\n';
+      }
     }
-    return os;
+    return out;
   }
 
-  friend std::istream& operator>>(std::istream& is, Matrix<T, Rows, Cols>& matrix) {
+  friend std::istream& operator>>(std::istream& in, Matrix<T, Rows, Cols>& matrix) {
     for (size_t i = 0; i < Rows; ++i) {
       for (size_t j = 0; j < Cols; ++j) {
-        is >> matrix.data[i][j];
+        in >> matrix.data[i][j];
       }
     }
-    return is;
+    return in;
   }
 };
-
-template <typename T, size_t Rows1, size_t Cols1, size_t Cols2>
-Matrix<T, Rows1, Cols2> operator*(const Matrix<T, Rows1, Cols1>& lhs, const Matrix<T, Cols1, Cols2>& rhs) {
-  Matrix<T, Rows1, Cols2> result{};
-  for (size_t i = 0; i < Rows1; ++i) {
-    for (size_t j = 0; j < Cols2; ++j) {
-      for (size_t k = 0; k < Cols1; ++k) {
-        result(i, j) += lhs(i, k) * rhs(k, j);
-      }
-    }
-  }
-  return result;
-}
 
 #endif  // MATRIX_H
