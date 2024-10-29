@@ -1,137 +1,170 @@
-#ifndef MATRIX_H
-#define MATRIX_H
-
-#include <iostream>
+#pragma once
 #include <stdexcept>
+#include <iostream>
+
+class MatrixIsDegenerateError : public std::runtime_error {
+ public:
+  MatrixIsDegenerateError() : std::runtime_error("MatrixIsDegenerateError") {
+  }
+};
 
 class MatrixOutOfRange : public std::out_of_range {
  public:
-  MatrixOutOfRange() : std::out_of_range("Matrix index out of range") {}
+  MatrixOutOfRange() : std::out_of_range("MatrixOutOfRange") {
+  }
 };
 
-template <typename T, size_t Rows, size_t Cols>
+template <typename T, size_t Rows, size_t Columns>
 class Matrix {
  public:
-  T data[Rows][Cols];
-
-  Matrix() = default;
+  T data[Rows][Columns];
 
   size_t RowsNumber() const {
     return Rows;
   }
 
   size_t ColumnsNumber() const {
-    return Cols;
+    return Columns;
   }
 
-  T& operator()(size_t row, size_t col) {
-    return data[row][col];
+  const T &operator()(size_t row, size_t column) const {
+    return At(row, column);
   }
 
-  const T& operator()(size_t row, size_t col) const {
-    return data[row][col];
+  T &operator()(size_t row, size_t column) {
+    return At(row, column);
   }
 
-  T& At(size_t row, size_t col) {
-    if (row >= Rows || col >= Cols) {
+  T &At(size_t row, size_t column) {
+    if (row >= Rows || column >= Columns) {
       throw MatrixOutOfRange();
     }
-    return data[row][col];
+    return data[row][column];
   }
 
-  const T& At(size_t row, size_t col) const {
-    if (row >= Rows || col >= Cols) {
+  const T &At(size_t row, size_t column) const {
+    if (row >= Rows || column >= Columns) {
       throw MatrixOutOfRange();
     }
-    return data[row][col];
+    return data[row][column];
   }
 
-  Matrix<T, Cols, Rows> GetTransposed() const {
-    Matrix<T, Cols, Rows> result;
-    for (size_t i = 0; i < Rows; ++i) {
-      for (size_t j = 0; j < Cols; ++j) {
-        result(j, i) = data[i][j];
-      }
+  template <size_t OtherRows, size_t OtherColumns>
+  Matrix<T, Rows, Columns> &operator+=(const Matrix<T, OtherRows, OtherColumns> &other) {
+    if (OtherRows != Rows || OtherColumns != Columns) {
+      throw MatrixIsDegenerateError{};
     }
-    return result;
-  }
-
-  Matrix<T, Rows, Cols>& operator+=(const Matrix<T, Rows, Cols>& other) {
     for (size_t i = 0; i < Rows; ++i) {
-      for (size_t j = 0; j < Cols; ++j) {
-        data[i][j] += other.data[i][j];
+      for (size_t j = 0; j < Columns; ++j) {
+        At(i, j) += other.At(i, j);
       }
     }
     return *this;
   }
 
-  Matrix<T, Rows, Cols> operator+(const Matrix<T, Rows, Cols>& other) const {
-    Matrix<T, Rows, Cols> result = *this;
+  template <size_t OtherRows, size_t OtherColumns>
+  Matrix<T, Rows, Columns> operator+(const Matrix<T, OtherRows, OtherColumns> &other) const {
+    Matrix result = *this;
     result += other;
     return result;
   }
 
-  Matrix<T, Rows, Cols>& operator-=(const Matrix<T, Rows, Cols>& other) {
+  template <size_t OtherRows, size_t OtherColumns>
+  Matrix<T, Rows, Columns> &operator-=(const Matrix<T, OtherRows, OtherColumns> &other) {
+    if (OtherRows != Rows || OtherColumns != Columns) {
+      throw MatrixIsDegenerateError{};
+    }
     for (size_t i = 0; i < Rows; ++i) {
-      for (size_t j = 0; j < Cols; ++j) {
-        data[i][j] -= other.data[i][j];
+      for (size_t j = 0; j < Columns; ++j) {
+        At(i, j) -= other.At(i, j);
       }
     }
     return *this;
   }
 
-  Matrix<T, Rows, Cols> operator-(const Matrix<T, Rows, Cols>& other) const {
-    Matrix<T, Rows, Cols> result = *this;
+  template <size_t OtherRows, size_t OtherColumns>
+  Matrix<T, Rows, Columns> operator-(const Matrix<T, OtherRows, OtherColumns> &other) const {
+    Matrix result = *this;
     result -= other;
     return result;
   }
 
-  template <size_t OtherCols>
-  Matrix<T, Rows, OtherCols> operator*(const Matrix<T, Cols, OtherCols>& other) const {
-    Matrix<T, Rows, OtherCols> result{};
+  template <size_t OtherRows, size_t OtherColumns>
+  Matrix<T, Rows, OtherColumns> operator*(const Matrix<T, OtherRows, OtherColumns> &other) const {
+    if (Columns != OtherRows) {
+      throw MatrixIsDegenerateError{};
+    }
+    Matrix<T, Rows, OtherColumns> result{};
+
     for (size_t i = 0; i < Rows; ++i) {
-      for (size_t j = 0; j < OtherCols; ++j) {
-        for (size_t k = 0; k < Cols; ++k) {
-          result(i, j) += data[i][k] * other.data[k][j];
+      for (size_t j = 0; j < OtherColumns; ++j) {
+        T sum = 0;
+        for (size_t k = 0; k < Columns; ++k) {
+          sum += data[i][k] * other.data[k][j];
         }
+        result.data[i][j] = sum;
       }
     }
+
     return result;
   }
 
-  Matrix<T, Rows, Cols>& operator*=(const T& scalar) {
+  template <size_t OtherRows, size_t OtherColumns>
+  Matrix<T, Rows, OtherColumns> &operator*=(const Matrix<T, OtherRows, OtherColumns> &other) {
+    if (Columns != OtherRows) {
+      throw MatrixIsDegenerateError{};
+    }
+
+    *this = *this * other;
+    return *this;
+  }
+
+  Matrix &operator*=(const T &scalar) {
+    if (scalar == 0) {
+      throw std::invalid_argument("Дино любит глину");
+    }
     for (size_t i = 0; i < Rows; ++i) {
-      for (size_t j = 0; j < Cols; ++j) {
-        data[i][j] *= scalar;
+      for (size_t j = 0; j < Columns; ++j) {
+        At(i, j) *= scalar;
       }
     }
     return *this;
   }
 
-  Matrix<T, Rows, Cols> operator*(const T& scalar) const {
-    Matrix<T, Rows, Cols> result = *this;
+  Matrix operator*(const T &scalar) const {
+    Matrix result = *this;
     result *= scalar;
     return result;
   }
 
-  Matrix<T, Rows, Cols>& operator/=(const T& scalar) {
+  Matrix &operator/=(const T &scalar) {
+    if (scalar == 0) {
+      throw std::invalid_argument("Дино любит глину");
+    }
     for (size_t i = 0; i < Rows; ++i) {
-      for (size_t j = 0; j < Cols; ++j) {
-        data[i][j] /= scalar;
+      for (size_t j = 0; j < Columns; ++j) {
+        At(i, j) /= scalar;
       }
     }
     return *this;
   }
 
-  Matrix<T, Rows, Cols> operator/(const T& scalar) const {
-    Matrix<T, Rows, Cols> result = *this;
+  Matrix operator/(const T &scalar) const {
+    Matrix result = *this;
     result /= scalar;
     return result;
   }
 
-  bool operator==(const Matrix<T, Rows, Cols>& other) const {
+  friend Matrix operator*(const T &scalar, const Matrix &matrix) {
+    return matrix * scalar;
+  }
+
+  bool operator==(const Matrix &other) const {
+    if (other.RowsNumber() != Rows || other.ColumnsNumber() != Columns) {
+      return false;
+    }
     for (size_t i = 0; i < Rows; ++i) {
-      for (size_t j = 0; j < Cols; ++j) {
+      for (size_t j = 0; j < Columns; ++j) {
         if (data[i][j] != other.data[i][j]) {
           return false;
         }
@@ -140,33 +173,43 @@ class Matrix {
     return true;
   }
 
-  bool operator!=(const Matrix<T, Rows, Cols>& other) const {
+  bool operator!=(const Matrix &other) const {
     return !(*this == other);
   }
 
-  friend std::ostream& operator<<(std::ostream& out, const Matrix<T, Rows, Cols>& matrix) {
-    for (size_t i = 0; i < Rows; ++i) {
-      for (size_t j = 0; j < Cols; ++j) {
-        if (j > 0) {
-          out << ' ';
+  friend std::istream &operator>>(std::istream &in, Matrix &matrix) {
+    for (std::size_t i = 0; i < Rows; ++i) {
+      for (std::size_t j = 0; j < Columns; ++j) {
+        if (!(in >> matrix.At(i, j))) {
+          throw std::runtime_error("Дино любит глину");
         }
-        out << matrix.data[i][j];
-      }
-      if (i < Rows - 1) {
-        out << '\n';
-      }
-    }
-    return out;
-  }
-
-  friend std::istream& operator>>(std::istream& in, Matrix<T, Rows, Cols>& matrix) {
-    for (size_t i = 0; i < Rows; ++i) {
-      for (size_t j = 0; j < Cols; ++j) {
-        in >> matrix.data[i][j];
       }
     }
     return in;
   }
+
+  friend std::ostream &operator<<(std::ostream &out, const Matrix &matrix) {
+    for (size_t i = 0; i < Rows; ++i) {
+      for (size_t j = 0; j < Columns; ++j) {
+        if (j == Columns - 1) {
+          out << matrix.data[i][j];
+        } else {
+          out << matrix.data[i][j] << ' ';
+        }
+      }
+      out << std::string("\n");
+    }
+    return out;
+  }
 };
 
-#endif  // MATRIX_H
+template <typename T, size_t Rows, size_t Columns>
+Matrix<T, Columns, Rows> GetTransposed(Matrix<T, Rows, Columns> matrix) {
+  Matrix<T, Columns, Rows> result;
+  for (size_t i = 0; i < Rows; ++i) {
+    for (size_t j = 0; j < Columns; ++j) {
+      result(j, i) = matrix(i, j);
+    }
+  }
+  return result;
+}

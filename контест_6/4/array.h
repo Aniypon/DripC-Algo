@@ -6,8 +6,7 @@
 
 class ArrayOutOfRange : public std::out_of_range {
  public:
-  ArrayOutOfRange() : std::out_of_range("ArrayOutOfRange") {
-  }
+  ArrayOutOfRange() : std::out_of_range("ArrayOutOfRange") {}
 };
 
 template <class T, size_t N>

@@ -1,6 +1,7 @@
 #include "range.h"
 
 int main() {
+
   for (int i : Range(3)) {
     std::cout << i << " ";  // 0 1 2
   }
